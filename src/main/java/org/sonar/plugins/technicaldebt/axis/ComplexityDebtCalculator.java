@@ -20,6 +20,11 @@
 
 package org.sonar.plugins.technicaldebt.axis;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.DecoratorContext;
 import org.sonar.api.config.Settings;
 import org.sonar.api.measures.CoreMetrics;
@@ -30,14 +35,13 @@ import org.sonar.api.resources.Project;
 import org.sonar.plugins.technicaldebt.TechnicalDebtMetrics;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
 
-import java.util.Arrays;
-import java.util.List;
-
 /**
  * {@inheritDoc}
  */
 public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 
+	public static final Logger LOG = LoggerFactory.getLogger("TechnicalDebt");
+	
   private boolean isJava;
 
   public ComplexityDebtCalculator(Settings settings, Project project) {
@@ -56,6 +60,9 @@ public final class ComplexityDebtCalculator extends AxisDebtCalculator {
     Measure classes = context.getMeasure((isJava ? CoreMetrics.CLASSES : CoreMetrics.FILES));
     Measure functions = context.getMeasure(CoreMetrics.FUNCTIONS);
 
+    LOG.debug("Numbert of classes" + (MeasureUtils.hasValue(classes) ? classes.getValue() : 0));
+    LOG.debug("Numbert of functions" + (MeasureUtils.hasValue(functions) ? functions.getValue() : 0));
+    
     // FIXME Why no settings.getDouble() ?
     double debt = MeasureUtils.hasValue(classes) ? classes.getValue()
       * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_CLASS_COMPLEXITY)) : 0;

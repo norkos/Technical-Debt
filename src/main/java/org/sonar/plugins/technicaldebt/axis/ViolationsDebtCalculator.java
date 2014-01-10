@@ -20,6 +20,11 @@
 
 package org.sonar.plugins.technicaldebt.axis;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.DecoratorContext;
 import org.sonar.api.config.Settings;
 import org.sonar.api.measures.CoreMetrics;
@@ -27,9 +32,6 @@ import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasureUtils;
 import org.sonar.api.measures.Metric;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * {@inheritDoc}
@@ -39,6 +41,8 @@ public final class ViolationsDebtCalculator extends AxisDebtCalculator {
     super(settings);
   }
 
+  public static final Logger LOG = LoggerFactory.getLogger("TechnicalDebt");
+  
   /**
    * {@inheritDoc}
    */
@@ -79,6 +83,8 @@ public final class ViolationsDebtCalculator extends AxisDebtCalculator {
       // FIXME Why no settings.getDouble() ?
       return loc / 3 * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_VIOLATION)) / HOURS_PER_DAY;
     }
+    
+    LOG.debug("Weight violatoins" + weightedViolations);
 
     // Otherwise we calculate based on existing violations
     // FIXME Why no settings.getDouble() ?

@@ -20,6 +20,8 @@
 
 package org.sonar.plugins.technicaldebt.axis;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.DecoratorContext;
 import org.sonar.api.config.Settings;
 import org.sonar.api.measures.CoreMetrics;
@@ -35,65 +37,67 @@ import java.util.List;
  * {@inheritDoc}
  */
 public final class DuplicationDebtCalculator extends AxisDebtCalculator {
-  private static final int NUMBER_OF_LINES_PER_BLOCK = 50;
+	public static final int NUMBER_OF_LINES_PER_BLOCK = 50;
 
-  /**
-   * {@inheritDoc}
-   */
-  public DuplicationDebtCalculator(Settings settings) {
-    super(settings);
-  }
+	public static final Logger LOG = LoggerFactory.getLogger("TechnicalDebt");
 
-  /**
-   * {@inheritDoc}
-   */
-  public double calculateAbsoluteDebt(DecoratorContext context) {
-    Measure measure = context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS);
-    if (!MeasureUtils.hasValue(measure)) {
-      return 0.0;
-    }
-    // technicaldebt is calculate in man days
-    // FIXME Why no settings.getDouble() ?
-    return measure.getValue() * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS)) / HOURS_PER_DAY;
-  }
+	/**
+	 * {@inheritDoc}
+	 */
+	public DuplicationDebtCalculator(Settings settings) {
+		super(settings);
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public double calculateTotalPossibleDebt(DecoratorContext context) {
-    double duplicationDensity = getValue(context, CoreMetrics.DUPLICATED_LINES_DENSITY);
-    double absoluteDebt = calculateAbsoluteDebt(context);
+	/**
+	 * {@inheritDoc}
+	 */
+	public double calculateAbsoluteDebt(DecoratorContext context) {
+		Measure measure = context
+				.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY);
 
-    if (duplicationDensity == 0 && absoluteDebt == 0) {
-      return 0;
-    } else if (duplicationDensity == 0 || absoluteDebt == 0) {
-      // FIXME Why no settings.getDouble() ?
-      return getValue(context, CoreMetrics.LINES) / NUMBER_OF_LINES_PER_BLOCK * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS)) / HOURS_PER_DAY;
-    }
+		if (!MeasureUtils.hasValue(measure)) {
+			return 0.0;
+		}
 
-    return absoluteDebt * 100 / duplicationDensity;
-  }
+		return measure.getValue() / 100 * calculateTotalPossibleDebt(context);
+	}
 
-  private double getValue(DecoratorContext context, Metric metric) {
-    Measure measure = context.getMeasure(metric);
-    if (!MeasureUtils.hasValue(measure) || measure.getValue() == 0) {
-      return 0.0;
-    }
-    return measure.getValue();
-  }
+	/**
+	 * {@inheritDoc}
+	 */
+	public double calculateTotalPossibleDebt(DecoratorContext context) {
+		Measure measure = context.getMeasure(CoreMetrics.LINES);
 
-  /**
-   * {@inheritDoc}
-   */
-  public List<Metric> dependsOn() {
-    return Arrays.asList(CoreMetrics.DUPLICATED_BLOCKS, CoreMetrics.DUPLICATED_LINES_DENSITY, CoreMetrics.LINES);
-  }
+		if (!MeasureUtils.hasValue(measure)) {
+			if (context.getResource() != null && context.getResource().getKey() != null) {
+				LOG.error("No lines for resource "
+						+ context.getResource().getKey());
+			}
 
-  /**
-   * {@inheritDoc}
-   */
-  public String getName() {
-    return "Duplication";
+			return 0.0;
+		}
 
-  }
+		return measure.getValue()
+				/ NUMBER_OF_LINES_PER_BLOCK
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS)
+				/ HOURS_PER_DAY;
+
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<Metric> dependsOn() {
+		return Arrays.asList(CoreMetrics.DUPLICATED_LINES_DENSITY,
+				CoreMetrics.LINES);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getName() {
+		return "Duplication";
+
+	}
 }

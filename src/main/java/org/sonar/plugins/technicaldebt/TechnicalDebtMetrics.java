@@ -60,13 +60,6 @@ public final class TechnicalDebtMetrics implements Metrics {
       .setDomain(CoreMetrics.DOMAIN_GENERAL)
       .create();
 
-  public static final Metric TECHNICAL_DEBT_COMPLEXITY = new Metric.Builder("technical_debt_complexity", "Technical debt complexity", Metric.ValueType.FLOAT)
-      .setDescription("This is the technical debt of methods and classes above thresholds")
-      .setDirection(Metric.DIRECTION_NONE)
-      .setQualitative(false)
-      .setDomain(CoreMetrics.DOMAIN_GENERAL)
-      .setHidden(true)
-      .create();
 
   /**
    * {@inheritDoc}
@@ -76,8 +69,7 @@ public final class TechnicalDebtMetrics implements Metrics {
         TECHNICAL_DEBT,
         TECHNICAL_DEBT_DAYS,
         TECHNICAL_DEBT_REPARTITION,
-        TECHNICAL_DEBT_RATIO,
-        TECHNICAL_DEBT_COMPLEXITY
+        TECHNICAL_DEBT_RATIO
         );
   }
 }

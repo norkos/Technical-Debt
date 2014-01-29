@@ -35,12 +35,9 @@ import org.sonar.api.measures.PropertiesBuilder;
 import org.sonar.api.resources.Project;
 import org.sonar.api.resources.Resource;
 import org.sonar.plugins.technicaldebt.axis.AxisDebtCalculator;
-import org.sonar.plugins.technicaldebt.axis.CommentDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.ComplexityDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.CoverageDebtCalculator;
-import org.sonar.plugins.technicaldebt.axis.DesignDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.DuplicationDebtCalculator;
-import org.sonar.plugins.technicaldebt.axis.ViolationsDebtCalculator;
 
 import com.google.common.collect.Lists;
 
@@ -57,12 +54,9 @@ public final class TechnicalDebtDecorator implements Decorator {
 	 */
 	public TechnicalDebtDecorator(Settings settings, Project project) {
 		this.settings = settings;
-		axisList = Arrays.asList(new CommentDebtCalculator(settings),
-				new ComplexityDebtCalculator(settings, project),
+		axisList = Arrays.asList(new ComplexityDebtCalculator(settings),
 				new CoverageDebtCalculator(settings),
-				new DuplicationDebtCalculator(settings),
-				new ViolationsDebtCalculator(settings),
-				new DesignDebtCalculator(settings));
+				new DuplicationDebtCalculator(settings));
 	}
 
 	/**
@@ -100,23 +94,21 @@ public final class TechnicalDebtDecorator implements Decorator {
 		PropertiesBuilder<String, Double> techDebtRepartition = new PropertiesBuilder<String, Double>(
 				TechnicalDebtMetrics.TECHNICAL_DEBT_REPARTITION);
 
-		LOG.debug("NK Checkin resource " + resource.getLongName());
-
 		// We calculate the total absolute debt and total maximum debt
 		for (AxisDebtCalculator axis : axisList) {
-			LOG.debug("NK Checkin axis " + axis.getName());
+			LOG.debug("Checkin axis " + axis.getName());
 			double a = axis.calculateAbsoluteDebt(context);
 			double b = axis.calculateTotalPossibleDebt(context);
-			
-			LOG.debug("NK Absolute: " + a);
-			LOG.debug("NK Total: " + b);
-			
+
+			LOG.debug("Absolute: " + a);
+			LOG.debug("Total: " + b);
+
 			sonarDebt += a;
 			denominatorDensity += b;
 		}
-		
-		LOG.debug("NK sonarDebt: " + sonarDebt);
-		LOG.debug("NK denominatorDensity: " + denominatorDensity);
+
+		LOG.debug("SonarDebt: " + sonarDebt);
+		LOG.debug("DenominatorDensity: " + denominatorDensity);
 
 		// Then we calculate the % of each axis for this debt
 		for (AxisDebtCalculator axis : axisList) {
@@ -124,15 +116,14 @@ public final class TechnicalDebtDecorator implements Decorator {
 					axis.calculateAbsoluteDebt(context) / sonarDebt * 100);
 		}
 
-		// FIXME Why no settings.getDouble() ?
-		double dailyRate = Double.valueOf(settings
-				.getString(TechnicalDebtPlugin.DAILY_RATE));
+		double dailyRate = settings.getDouble(TechnicalDebtPlugin.DAILY_RATE);
 
 		saveMeasure(context, TechnicalDebtMetrics.TECHNICAL_DEBT, sonarDebt
 				* dailyRate);
 		saveMeasure(context, TechnicalDebtMetrics.TECHNICAL_DEBT_DAYS,
 				sonarDebt);
-		if (denominatorDensity != 0.0) {
+		
+		if (denominatorDensity > 0.0) {
 			saveMeasure(context, TechnicalDebtMetrics.TECHNICAL_DEBT_RATIO,
 					sonarDebt / denominatorDensity * 100);
 		}
@@ -141,17 +132,15 @@ public final class TechnicalDebtDecorator implements Decorator {
 
 	private void saveMeasure(DecoratorContext decoratorContext, Metric metric,
 			double measure) {
-		if (measure * 10 > 5) {
+		//if (measure * 10 > 5) {
 			decoratorContext.saveMeasure(metric, measure);
-		}
+		//}
 	}
 
 	private void addToRepartition(
 			PropertiesBuilder<String, Double> techDebtRepartition, String key,
 			double value) {
 		if (value > 0d) {
-			// Math.floor is important to avoid getting very long doubles... see
-			// SONAR-859
 			techDebtRepartition.add(key, Math.floor(value * 100.0) / 100);
 		}
 	}

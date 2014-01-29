@@ -36,67 +36,48 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DuplicationDebtCalculatorTest {
-  private DecoratorContext context;
-  private DuplicationDebtCalculator calculator;
+	private DecoratorContext context;
+	private DuplicationDebtCalculator calculator;
 
-  @Before
-  public void setUp() throws Exception {
-    Settings settings = new Settings(new PropertyDefinitions(TechnicalDebtPlugin.class));
-    calculator = new DuplicationDebtCalculator(settings);
-    context = mock(DecoratorContext.class);
-  }
+	@Before
+	public void setUp() throws Exception {
+		Settings settings = new Settings(new PropertyDefinitions(
+				TechnicalDebtPlugin.class));
+		calculator = new DuplicationDebtCalculator(settings);
+		context = mock(DecoratorContext.class);
+	}
 
-  @Test
-  public void testCalculateAbsoluteDebt() {
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(null);
-    assertEquals(0d, calculator.calculateAbsoluteDebt(context), 0);
+	@Test
+	public void testCalculateAbsoluteDebt() {
+		when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY))
+				.thenReturn(null);
+		assertEquals(0d, calculator.calculateAbsoluteDebt(context), 0);
 
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_BLOCKS, 0.0));
-    assertEquals(0d, calculator.calculateAbsoluteDebt(context), 0);
+	}
 
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_BLOCKS, 32.0));
-    assertEquals(8d, calculator.calculateAbsoluteDebt(context), 0);
-  }
+	@Test
+	public void testCalculateTotalDebtWhenNoLines() {
+		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(null);
+		assertEquals(0d, calculator.calculateTotalPossibleDebt(context), 0);
 
-  @Test
-  public void testCalculateTotalDebtWhenNoDebt() {
-    when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY)).
-        thenReturn(null);
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(null);
-    assertEquals(0d, calculator.calculateTotalPossibleDebt(context), 0);
+	}
 
-    when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_LINES_DENSITY, 0.0));
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_BLOCKS, 4.0));
-    when(context.getMeasure(CoreMetrics.LINES)).
-        thenReturn(new Measure(CoreMetrics.LINES, 500.0));
-    assertEquals(2.5d, calculator.calculateTotalPossibleDebt(context), 0);
+	@Test
+	public void testCalculateTotalDebt() {
+		double lines = 500.0;
 
-    when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_LINES_DENSITY, 50.0));
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_BLOCKS, 0.0));
-    when(context.getMeasure(CoreMetrics.LINES)).
-        thenReturn(new Measure(CoreMetrics.LINES, 500.0));
-    assertEquals(2.5d, calculator.calculateTotalPossibleDebt(context), 0);
-  }
+		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(
+				new Measure(CoreMetrics.LINES, lines));
+		assertEquals(lines
+				/ DuplicationDebtCalculator.NUMBER_OF_LINES_PER_BLOCK
+				* TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS_DEFVAL
+				/ AxisDebtCalculator.HOURS_PER_DAY,
+				calculator.calculateTotalPossibleDebt(context), 0.01);
 
-  @Test
-  public void testCalculateTotalDebt() {
-    when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_LINES_DENSITY, 40.0));
-    when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).
-        thenReturn(new Measure(CoreMetrics.DUPLICATED_BLOCKS, 32.0));
-    assertEquals(20d, calculator.calculateTotalPossibleDebt(context), 0);
-  }
+	}
 
-  @Test
-  public void testDependsOn() {
-    assertThat(calculator.dependsOn().size(), is(3));
-  }
+	@Test
+	public void testDependsOn() {
+		assertThat(calculator.dependsOn().size(), is(2));
+	}
 }

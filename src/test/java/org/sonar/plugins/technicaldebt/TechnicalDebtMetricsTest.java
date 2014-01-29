@@ -29,6 +29,6 @@ public class TechnicalDebtMetricsTest {
 
   @Test
   public void defineMetrics() {
-    assertThat(new TechnicalDebtMetrics().getMetrics().size(), is(5));
+    assertThat(new TechnicalDebtMetrics().getMetrics().size(), is(4));
   }
 }

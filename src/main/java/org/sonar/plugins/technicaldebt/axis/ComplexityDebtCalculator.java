@@ -23,16 +23,14 @@ package org.sonar.plugins.technicaldebt.axis;
 import java.util.Arrays;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.sonar.api.batch.DecoratorContext;
 import org.sonar.api.config.Settings;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasureUtils;
 import org.sonar.api.measures.Metric;
-import org.sonar.api.resources.Project;
-import org.sonar.plugins.technicaldebt.TechnicalDebtMetrics;
+import org.sonar.plugins.cxx.cppncss.CxxCppNcssSensor;
+import org.sonar.plugins.cxx.distance.DistanceMetrics;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
 
 /**
@@ -40,44 +38,51 @@ import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
  */
 public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 
-	public static final Logger LOG = LoggerFactory.getLogger("TechnicalDebt");
-	
-  private boolean isJava;
+	private int maxComplexity;
 
-  public ComplexityDebtCalculator(Settings settings, Project project) {
-    super(settings);
-    isJava = project.getLanguage() != null ? "java".equals(project.getLanguage().getKey()) : false;
-  }
+	public ComplexityDebtCalculator(Settings settings) {
+		super(settings);
+		maxComplexity = CxxCppNcssSensor.getParam(settings,
+				CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY,
+				CxxCppNcssSensor.FUNCTION_COMPLEXITY);
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public double calculateAbsoluteDebt(DecoratorContext context) {
-    return MeasureUtils.getValue(context.getMeasure(TechnicalDebtMetrics.TECHNICAL_DEBT_COMPLEXITY), 0.0) / HOURS_PER_DAY;
-  }
+	/**
+	 * {@inheritDoc}
+	 */
+	public double calculateAbsoluteDebt(DecoratorContext context) {
+		Measure complexity = context
+				.getMeasure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH);
 
-  public double calculateTotalPossibleDebt(DecoratorContext context) {
-    Measure classes = context.getMeasure((isJava ? CoreMetrics.CLASSES : CoreMetrics.FILES));
-    Measure functions = context.getMeasure(CoreMetrics.FUNCTIONS);
+		if (!MeasureUtils.hasValue(complexity)) {
+			return 0.0;
+		}
 
-    LOG.debug("Numbert of classes" + (MeasureUtils.hasValue(classes) ? classes.getValue() : 0));
-    LOG.debug("Numbert of functions" + (MeasureUtils.hasValue(functions) ? functions.getValue() : 0));
-    
-    // FIXME Why no settings.getDouble() ?
-    double debt = MeasureUtils.hasValue(classes) ? classes.getValue()
-      * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_CLASS_COMPLEXITY)) : 0;
-    debt += MeasureUtils.hasValue(functions) ? functions.getValue()
-      * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_METHOD_COMPLEXITY)) : 0;
+		return complexity.getValue()
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_METHOD_COMPLEXITY)
+				/ HOURS_PER_DAY;
+	}
 
-    // technicaldebt is calculated in man days
-    return debt / HOURS_PER_DAY;
-  }
+	public double calculateTotalPossibleDebt(DecoratorContext context) {
+		Measure complexity = context.getMeasure(CoreMetrics.NCLOC);
 
-  public List<Metric> dependsOn() {
-    return Arrays.asList(CoreMetrics.CLASSES, CoreMetrics.FILES, CoreMetrics.FUNCTIONS, TechnicalDebtMetrics.TECHNICAL_DEBT_COMPLEXITY);
-  }
+		if (!MeasureUtils.hasValue(complexity)
+				|| complexity.getValue() - maxComplexity < 0.0) {
+			return 0.0;
+		}
 
-  public String getName() {
-    return "Complexity";
-  }
+		return (complexity.getValue() - maxComplexity)
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_METHOD_COMPLEXITY)
+				/ HOURS_PER_DAY;
+	}
+
+	public List<Metric> dependsOn() {
+		return Arrays.asList(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH);
+	}
+
+	public String getName() {
+		return "Complexity";
+	}
 }

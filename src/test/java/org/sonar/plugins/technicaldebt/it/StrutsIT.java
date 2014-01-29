@@ -32,10 +32,8 @@ import static org.junit.Assert.assertThat;
 public class StrutsIT {
 
   private static Sonar sonar;
-  private static final String PROJECT_STRUTS = "org.apache.struts:struts-parent";
-  private static final String MODULE_CORE = "org.apache.struts:struts-core";
-  private static final String FILE_ACTION = "org.apache.struts:struts-core:org.apache.struts.action.Action";
-  private static final String PACKAGE_ACTION = "org.apache.struts:struts-core:org.apache.struts.action";
+  private static final String PROJECT_STRUTS = "CxxPlugin:Debt";
+  private static final String FILE_ACTION = "CxxPlugin:Debt:lib/component1.cc";
 
   @BeforeClass
   public static void buildServer() {
@@ -43,11 +41,8 @@ public class StrutsIT {
   }
 
   @Test
-  public void strutsIsAnalyzed() {
-    assertThat(sonar.find(new ResourceQuery(PROJECT_STRUTS)).getName(), is("Struts"));
-    assertThat(sonar.find(new ResourceQuery(PROJECT_STRUTS)).getVersion(), is("1.3.9"));
-    assertThat(sonar.find(new ResourceQuery(MODULE_CORE)).getName(), is("Struts Core"));
-    assertThat(sonar.find(new ResourceQuery(PACKAGE_ACTION)).getName(), is("org.apache.struts.action"));
+  public void isAnalyzed() {
+    assertThat(sonar.find(new ResourceQuery(PROJECT_STRUTS)).getName(), is("Debt"));
   }
 
   @Test
@@ -60,23 +55,6 @@ public class StrutsIT {
     assertThat(getProjectMeasure("technical_debt_days").getValue(), is(557.3));
   }
 
-  @Test
-  public void modulesMetrics() {
-    assertThat(getCoreModuleMeasure("technical_debt_repart").getData(),
-        is("Comments=10.15;Complexity=20.72;Coverage=34.71;Design=14.45;Duplication=1.2;Violations=18.74"));
-    assertThat(getCoreModuleMeasure("technical_debt").getValue(), is(62265.1));
-    assertThat(getCoreModuleMeasure("technical_debt_ratio").getValue(), is(17.4));
-    assertThat(getCoreModuleMeasure("technical_debt_days").getValue(), is(124.5));
-  }
-
-  @Test
-  public void packagesMetrics() {
-    assertThat(getPackageMeasure("technical_debt_repart").getData(),
-        is("Comments=0.14;Complexity=26.28;Coverage=50.46;Duplication=2.88;Violations=20.23"));
-    assertThat(getPackageMeasure("technical_debt").getValue(), is(8680.3));
-    assertThat(getPackageMeasure("technical_debt_ratio").getValue(), is(10.1));
-    assertThat(getPackageMeasure("technical_debt_days").getValue(), is(17.4));
-  }
 
   @Test
   public void filesMetrics() {
@@ -88,14 +66,6 @@ public class StrutsIT {
 
   private Measure getFileMeasure(String metricKey) {
     return sonar.find(ResourceQuery.createForMetrics(FILE_ACTION, metricKey)).getMeasure(metricKey);
-  }
-
-  private Measure getPackageMeasure(String metricKey) {
-    return sonar.find(ResourceQuery.createForMetrics(PACKAGE_ACTION, metricKey)).getMeasure(metricKey);
-  }
-
-  private Measure getCoreModuleMeasure(String metricKey) {
-    return sonar.find(ResourceQuery.createForMetrics(MODULE_CORE, metricKey)).getMeasure(metricKey);
   }
 
   private Measure getProjectMeasure(String metricKey) {

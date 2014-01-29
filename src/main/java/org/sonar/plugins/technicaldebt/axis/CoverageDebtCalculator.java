@@ -36,62 +36,67 @@ import java.util.List;
  */
 public final class CoverageDebtCalculator extends AxisDebtCalculator {
 
-  private static final double COVERAGE_TARGET = 0.8;
+	public static final double COVERAGE_TARGET = 0.8;
 
-  /**
-   * {@inheritDoc}
-   */
-  public CoverageDebtCalculator(Settings settings) {
-    super(settings);
-  }
+	/**
+	 * {@inheritDoc}
+	 */
+	public CoverageDebtCalculator(Settings settings) {
+		super(settings);
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public double calculateAbsoluteDebt(DecoratorContext context) {
-    Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
-    Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
+	/**
+	 * {@inheritDoc}
+	 */
+	public double calculateAbsoluteDebt(DecoratorContext context) {
+		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
+		Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
 
-    if (!MeasureUtils.hasValue(complexity) || !MeasureUtils.hasValue(coverage)) {
-      return 0.0;
-    }
+		if (!MeasureUtils.hasValue(complexity)
+				|| !MeasureUtils.hasValue(coverage)) {
+			return 0.0;
+		}
 
-    // It is not reasonable to have an objective at 100%, so target is 80% for coverage
-    double gap = (COVERAGE_TARGET - coverage.getValue() / 100) * complexity.getValue();
+		// It is not reasonable to have an objective at 100%, so target is 80%
+		// for coverage
+		double gap = (COVERAGE_TARGET - coverage.getValue() / 100)
+				* complexity.getValue();
 
-    // technicaldebt is calculate in man days
-    // FIXME Why no settings.getDouble() ?
-    return (gap > 0.0 ? gap : 0.0) * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_UNCOVERED_COMPLEXITY)) / HOURS_PER_DAY;
-  }
+		return (gap > 0.0 ? gap : 0.0)
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_UNCOVERED_COMPLEXITY)
+				/ HOURS_PER_DAY;
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public double calculateTotalPossibleDebt(DecoratorContext context) {
-    Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
+	/**
+	 * {@inheritDoc}
+	 */
+	public double calculateTotalPossibleDebt(DecoratorContext context) {
+		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 
-    if (!MeasureUtils.hasValue(complexity)) {
-      return 0.0;
-    }
+		if (!MeasureUtils.hasValue(complexity)) {
+			return 0.0;
+		}
 
-    // technicaldebt is calculate in man days
-    // FIXME Why no settings.getDouble() ?
-    return COVERAGE_TARGET * complexity.getValue() * Double.valueOf(settings.getString(TechnicalDebtPlugin.COST_UNCOVERED_COMPLEXITY))
-      / HOURS_PER_DAY;
-  }
+		return COVERAGE_TARGET
+				* complexity.getValue()
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_UNCOVERED_COMPLEXITY)
+				/ HOURS_PER_DAY;
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public List<Metric> dependsOn() {
-    return Arrays.asList(CoreMetrics.COMPLEXITY, CoreMetrics.COVERAGE);
-  }
+	/**
+	 * {@inheritDoc}
+	 */
+	public List<Metric> dependsOn() {
+		return Arrays.asList(CoreMetrics.COMPLEXITY, CoreMetrics.COVERAGE);
+	}
 
-  /**
-   * {@inheritDoc}
-   */
-  public String getName() {
-    return "Coverage";
+	/**
+	 * {@inheritDoc}
+	 */
+	public String getName() {
+		return "Coverage";
 
-  }
+	}
 }

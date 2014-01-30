@@ -50,7 +50,7 @@ public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 	/**
 	 * {@inheritDoc}
 	 */
-	public double calculateAbsoluteDebt(DecoratorContext context) {
+	public double calculateActualDebt(DecoratorContext context) {
 		Measure complexity = context
 				.getMeasure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH);
 
@@ -64,12 +64,12 @@ public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 				/ HOURS_PER_DAY;
 	}
 
-	public double calculateTotalPossibleDebt(DecoratorContext context) {
-		Measure complexity = context.getMeasure(CoreMetrics.NCLOC);
+	public double calculatePossibleDebt(DecoratorContext context) throws NoCalculation {
+		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 
 		if (!MeasureUtils.hasValue(complexity)
 				|| complexity.getValue() - maxComplexity < 0.0) {
-			return 0.0;
+			throw new NoCalculation();
 		}
 
 		return (complexity.getValue() - maxComplexity)

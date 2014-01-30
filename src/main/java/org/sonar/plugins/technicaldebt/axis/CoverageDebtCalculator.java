@@ -48,7 +48,7 @@ public final class CoverageDebtCalculator extends AxisDebtCalculator {
 	/**
 	 * {@inheritDoc}
 	 */
-	public double calculateAbsoluteDebt(DecoratorContext context) {
+	public double calculateActualDebt(DecoratorContext context) {
 		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 		Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
 
@@ -70,12 +70,17 @@ public final class CoverageDebtCalculator extends AxisDebtCalculator {
 
 	/**
 	 * {@inheritDoc}
+	 * 
+	 * @throws NoCalculation
 	 */
-	public double calculateTotalPossibleDebt(DecoratorContext context) {
+	public double calculatePossibleDebt(DecoratorContext context)
+			throws NoCalculation {
+		Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
 		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 
-		if (!MeasureUtils.hasValue(complexity)) {
-			return 0.0;
+		if (!MeasureUtils.hasValue(coverage)
+				|| !MeasureUtils.hasValue(complexity)) {
+			throw new NoCalculation();
 		}
 
 		return COVERAGE_TARGET

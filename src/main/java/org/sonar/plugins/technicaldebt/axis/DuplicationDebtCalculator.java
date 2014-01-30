@@ -51,34 +51,41 @@ public final class DuplicationDebtCalculator extends AxisDebtCalculator {
 	/**
 	 * {@inheritDoc}
 	 */
-	public double calculateAbsoluteDebt(DecoratorContext context) {
-		Measure measure = context
-				.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY);
+	public double calculateActualDebt(DecoratorContext context) {
+		Measure blocks = context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS);
 
-		if (!MeasureUtils.hasValue(measure)) {
+		if (!MeasureUtils.hasValue(blocks)) {
 			return 0.0;
 		}
 
-		return measure.getValue() / 100 * calculateTotalPossibleDebt(context);
+		return blocks.getValue()
+				* settings
+						.getDouble(TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS)
+				/ HOURS_PER_DAY;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public double calculateTotalPossibleDebt(DecoratorContext context) {
-		Measure measure = context.getMeasure(CoreMetrics.LINES);
-
-		if (!MeasureUtils.hasValue(measure)) {
-			if (context.getResource() != null && context.getResource().getKey() != null) {
-				LOG.error("No lines for resource "
-						+ context.getResource().getKey());
-			}
-
-			return 0.0;
+	public double calculatePossibleDebt(DecoratorContext context) throws NoCalculation {
+		Measure lines = context.getMeasure(CoreMetrics.LINES);
+		if (!MeasureUtils.hasValue(lines)) {
+			throw new NoCalculation();
 		}
 
-		return measure.getValue()
-				/ NUMBER_OF_LINES_PER_BLOCK
+		Measure blocks = context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS);
+		Measure density = context
+				.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY);
+
+		double numberOfBlocks;
+		if (MeasureUtils.hasValue(blocks) && MeasureUtils.hasValue(density)) {
+			numberOfBlocks = 100 * blocks.getValue() / density.getValue();
+
+		} else {
+			numberOfBlocks = lines.getValue() / NUMBER_OF_LINES_PER_BLOCK;
+		}
+
+		return numberOfBlocks
 				* settings
 						.getDouble(TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS)
 				/ HOURS_PER_DAY;
@@ -90,7 +97,7 @@ public final class DuplicationDebtCalculator extends AxisDebtCalculator {
 	 */
 	public List<Metric> dependsOn() {
 		return Arrays.asList(CoreMetrics.DUPLICATED_LINES_DENSITY,
-				CoreMetrics.LINES);
+				CoreMetrics.DUPLICATED_BLOCKS, CoreMetrics.LINES);
 	}
 
 	/**

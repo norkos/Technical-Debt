@@ -38,6 +38,7 @@ import org.sonar.plugins.technicaldebt.axis.AxisDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.ComplexityDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.CoverageDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.DuplicationDebtCalculator;
+import org.sonar.plugins.technicaldebt.axis.NoCalculation;
 
 import com.google.common.collect.Lists;
 
@@ -97,14 +98,12 @@ public final class TechnicalDebtDecorator implements Decorator {
 		// We calculate the total absolute debt and total maximum debt
 		for (AxisDebtCalculator axis : axisList) {
 			LOG.debug("Checkin axis " + axis.getName());
-			double a = axis.calculateAbsoluteDebt(context);
-			double b = axis.calculateTotalPossibleDebt(context);
 
-			LOG.debug("Absolute: " + a);
-			LOG.debug("Total: " + b);
-
-			sonarDebt += a;
-			denominatorDensity += b;
+			try {
+				denominatorDensity += axis.calculatePossibleDebt(context);
+				sonarDebt += axis.calculateActualDebt(context);
+			} catch (NoCalculation e) {
+			}
 		}
 
 		LOG.debug("SonarDebt: " + sonarDebt);
@@ -113,7 +112,7 @@ public final class TechnicalDebtDecorator implements Decorator {
 		// Then we calculate the % of each axis for this debt
 		for (AxisDebtCalculator axis : axisList) {
 			addToRepartition(techDebtRepartition, axis.getName(),
-					axis.calculateAbsoluteDebt(context) / sonarDebt * 100);
+					axis.calculateActualDebt(context) / sonarDebt * 100);
 		}
 
 		double dailyRate = settings.getDouble(TechnicalDebtPlugin.DAILY_RATE);
@@ -122,7 +121,7 @@ public final class TechnicalDebtDecorator implements Decorator {
 				* dailyRate);
 		saveMeasure(context, TechnicalDebtMetrics.TECHNICAL_DEBT_DAYS,
 				sonarDebt);
-		
+
 		if (denominatorDensity > 0.0) {
 			saveMeasure(context, TechnicalDebtMetrics.TECHNICAL_DEBT_RATIO,
 					sonarDebt / denominatorDensity * 100);
@@ -132,9 +131,9 @@ public final class TechnicalDebtDecorator implements Decorator {
 
 	private void saveMeasure(DecoratorContext decoratorContext, Metric metric,
 			double measure) {
-		//if (measure * 10 > 5) {
-			decoratorContext.saveMeasure(metric, measure);
-		//}
+		// if (measure * 10 > 5) {
+		decoratorContext.saveMeasure(metric, measure);
+		// }
 	}
 
 	private void addToRepartition(

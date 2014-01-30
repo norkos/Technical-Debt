@@ -49,35 +49,71 @@ public class DuplicationDebtCalculatorTest {
 
 	@Test
 	public void testCalculateAbsoluteDebt() {
-		when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY))
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS))
 				.thenReturn(null);
-		assertEquals(0d, calculator.calculateAbsoluteDebt(context), 0);
+		assertEquals(0d, calculator.calculateActualDebt(context), 0);
+
+		double blocks = 4;
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).thenReturn(
+				new Measure(CoreMetrics.LINES, blocks));
+		assertEquals(blocks * TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS_DEFVAL
+				/ DuplicationDebtCalculator.HOURS_PER_DAY,
+				calculator.calculateActualDebt(context), 0.0001);
 
 	}
 
 	@Test
-	public void testCalculateTotalDebtWhenNoLines() {
-		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(null);
-		assertEquals(0d, calculator.calculateTotalPossibleDebt(context), 0);
+	public void testTotalPossibleDebtWhenNoDuplication() throws NoCalculation {
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS))
+				.thenReturn(null);
 
-	}
-
-	@Test
-	public void testCalculateTotalDebt() {
-		double lines = 500.0;
-
+		double lines = 345;
 		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(
 				new Measure(CoreMetrics.LINES, lines));
+
 		assertEquals(lines
 				/ DuplicationDebtCalculator.NUMBER_OF_LINES_PER_BLOCK
 				* TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS_DEFVAL
-				/ AxisDebtCalculator.HOURS_PER_DAY,
-				calculator.calculateTotalPossibleDebt(context), 0.01);
+				/ DuplicationDebtCalculator.HOURS_PER_DAY,
+				calculator.calculatePossibleDebt(context), 0.0001);
+	}
+
+	@Test(expected = NoCalculation.class)
+	public void testTotalPossibleDebtWhenNoDuplicationWhenNoLines()
+			throws NoCalculation {
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS))
+				.thenReturn(null);
+
+		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(null);
+
+		calculator.calculatePossibleDebt(context);
+	}
+
+	@Test
+	public void testTotalPossibleDebt() throws NoCalculation {
+		double blocks = 2;
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).thenReturn(
+				new Measure(CoreMetrics.DUPLICATED_BLOCKS, blocks));
+
+		double density = 30;
+		when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY))
+				.thenReturn(
+						new Measure(CoreMetrics.DUPLICATED_LINES_DENSITY,
+								density));
+
+		double lines = 345;
+		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(
+				new Measure(CoreMetrics.LINES, lines));
+
+		assertEquals(blocks * 100 / density
+				* TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS_DEFVAL
+				/ DuplicationDebtCalculator.HOURS_PER_DAY,
+				calculator.calculatePossibleDebt(context), 0.0001);
 
 	}
 
 	@Test
 	public void testDependsOn() {
-		assertThat(calculator.dependsOn().size(), is(2));
+		assertThat(calculator.dependsOn().size(), is(3));
 	}
 }

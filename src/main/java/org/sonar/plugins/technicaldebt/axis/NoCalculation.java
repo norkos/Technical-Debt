@@ -20,25 +20,6 @@
 
 package org.sonar.plugins.technicaldebt.axis;
 
-import org.sonar.api.batch.DecoratorContext;
-import org.sonar.api.config.Settings;
-import org.sonar.api.measures.Metric;
+public class NoCalculation extends Exception {
 
-import java.util.List;
-
-public abstract class AxisDebtCalculator {
-  protected Settings settings;
-  public static final double HOURS_PER_DAY = 8.0;
-
-  public AxisDebtCalculator(Settings settings) {
-    this.settings = settings;
-  }
-
-  public abstract double calculateActualDebt(DecoratorContext context);
-
-  public abstract double calculatePossibleDebt(DecoratorContext context) throws NoCalculation;
-
-  public abstract List<Metric> dependsOn();
-
-  public abstract String getName();
 }

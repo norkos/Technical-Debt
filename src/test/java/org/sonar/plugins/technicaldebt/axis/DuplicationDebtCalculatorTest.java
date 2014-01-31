@@ -111,7 +111,30 @@ public class DuplicationDebtCalculatorTest {
 				calculator.calculatePossibleDebt(context), 0.0001);
 
 	}
+	@Test
+	public void testTotalPossibleDebtWhenNoCPD() throws NoCalculation {
+		double blocks = 0;
+		when(context.getMeasure(CoreMetrics.DUPLICATED_BLOCKS)).thenReturn(
+				new Measure(CoreMetrics.DUPLICATED_BLOCKS, blocks));
 
+		double density = 0;
+		when(context.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY))
+				.thenReturn(
+						new Measure(CoreMetrics.DUPLICATED_LINES_DENSITY,
+								density));
+
+		double lines = 345;
+		when(context.getMeasure(CoreMetrics.LINES)).thenReturn(
+				new Measure(CoreMetrics.LINES, lines));
+
+		assertEquals(lines
+				/ DuplicationDebtCalculator.NUMBER_OF_LINES_PER_BLOCK
+				* TechnicalDebtPlugin.COST_DUPLICATED_BLOCKS_DEFVAL
+				/ DuplicationDebtCalculator.HOURS_PER_DAY,
+				calculator.calculatePossibleDebt(context), 0.0001);
+
+	}
+	
 	@Test
 	public void testDependsOn() {
 		assertThat(calculator.dependsOn().size(), is(3));

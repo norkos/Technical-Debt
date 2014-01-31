@@ -95,6 +95,7 @@ public final class TechnicalDebtDecorator implements Decorator {
 		PropertiesBuilder<String, Double> techDebtRepartition = new PropertiesBuilder<String, Double>(
 				TechnicalDebtMetrics.TECHNICAL_DEBT_REPARTITION);
 
+		LOG.debug("Checkin resource " + context.getResource().getName());
 		// We calculate the total absolute debt and total maximum debt
 		for (AxisDebtCalculator axis : axisList) {
 			LOG.debug("Checkin axis " + axis.getName());

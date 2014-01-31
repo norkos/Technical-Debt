@@ -29,6 +29,7 @@ import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasureUtils;
 import org.sonar.api.measures.Metric;
+import org.sonar.plugins.cxx.coverage.NoCoverageMetrics;
 import org.sonar.plugins.cxx.cppncss.CxxCppNcssSensor;
 import org.sonar.plugins.cxx.distance.DistanceMetrics;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
@@ -38,11 +39,11 @@ import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
  */
 public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 
-	private int maxComplexity;
+	private int maxComplexityOfFile;
 
 	public ComplexityDebtCalculator(Settings settings) {
 		super(settings);
-		maxComplexity = CxxCppNcssSensor.getParam(settings,
+		maxComplexityOfFile = CxxCppNcssSensor.getParam(settings,
 				CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY,
 				CxxCppNcssSensor.FUNCTION_COMPLEXITY);
 	}
@@ -64,18 +65,39 @@ public final class ComplexityDebtCalculator extends AxisDebtCalculator {
 				/ HOURS_PER_DAY;
 	}
 
-	public double calculatePossibleDebt(DecoratorContext context) throws NoCalculation {
-		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
+	public double calculatePossibleDebt(DecoratorContext context)
+			throws NoCalculation {
+		double complexityOverrun = getComplexityToBeCovered(context)
+				- maxComplexityOfFile;
 
-		if (!MeasureUtils.hasValue(complexity)
-				|| complexity.getValue() - maxComplexity < 0.0) {
+		if (complexityOverrun < 0.0) {
 			throw new NoCalculation();
 		}
 
-		return (complexity.getValue() - maxComplexity)
+		return complexityOverrun
 				* settings
 						.getDouble(TechnicalDebtPlugin.COST_METHOD_COMPLEXITY)
 				/ HOURS_PER_DAY;
+	}
+
+	private double getComplexityToBeCovered(DecoratorContext context)
+			throws NoCalculation {
+
+		Measure complexityToBeCovered = context
+				.getMeasure(CoreMetrics.COMPLEXITY);
+		if (!MeasureUtils.hasValue(complexityToBeCovered)) {
+			throw new NoCalculation();
+		}
+
+		double complexityValue = complexityToBeCovered.getValue();
+
+		Measure notCoveredComplexityMeasure = context
+				.getMeasure(NoCoverageMetrics.NOT_COVERED_COMPLEXITY);
+		if (MeasureUtils.hasValue(notCoveredComplexityMeasure)) {
+			complexityValue -= notCoveredComplexityMeasure.getValue();
+		}
+
+		return complexityValue;
 	}
 
 	public List<Metric> dependsOn() {

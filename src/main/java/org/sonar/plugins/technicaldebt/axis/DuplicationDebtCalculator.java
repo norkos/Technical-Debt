@@ -67,7 +67,8 @@ public final class DuplicationDebtCalculator extends AxisDebtCalculator {
 	/**
 	 * {@inheritDoc}
 	 */
-	public double calculatePossibleDebt(DecoratorContext context) throws NoCalculation {
+	public double calculatePossibleDebt(DecoratorContext context)
+			throws NoCalculation {
 		Measure lines = context.getMeasure(CoreMetrics.LINES);
 		if (!MeasureUtils.hasValue(lines)) {
 			throw new NoCalculation();
@@ -78,7 +79,8 @@ public final class DuplicationDebtCalculator extends AxisDebtCalculator {
 				.getMeasure(CoreMetrics.DUPLICATED_LINES_DENSITY);
 
 		double numberOfBlocks;
-		if (MeasureUtils.hasValue(blocks) && MeasureUtils.hasValue(density)) {
+		if (MeasureUtils.hasValue(blocks) && MeasureUtils.hasValue(density)
+				&& density.getValue() > 0.0d) {
 			numberOfBlocks = 100 * blocks.getValue() / density.getValue();
 
 		} else {

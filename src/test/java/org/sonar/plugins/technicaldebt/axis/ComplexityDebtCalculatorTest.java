@@ -30,6 +30,7 @@ import org.sonar.api.config.PropertyDefinitions;
 import org.sonar.api.config.Settings;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
+import org.sonar.plugins.cxx.coverage.NoCoverageMetrics;
 import org.sonar.plugins.cxx.cppncss.CxxCppNcssSensor;
 import org.sonar.plugins.cxx.distance.DistanceMetrics;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
@@ -67,6 +68,25 @@ public class ComplexityDebtCalculatorTest {
 				calculator.calculatePossibleDebt(context), 0.0001);
 	}
 
+	@Test
+	public void testTotalPossibleComplexityWithSomeNotCovered() throws Exception {
+		double complexityDelta = 12;
+		double complexity = CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY
+				+ complexityDelta;
+		double notCoveredComplexity = 2;
+		
+		when(context.getMeasure(CoreMetrics.COMPLEXITY)).thenReturn(
+				new Measure(CoreMetrics.COMPLEXITY, complexity));
+		
+		when(context.getMeasure(NoCoverageMetrics.NOT_COVERED_COMPLEXITY)).thenReturn(
+				new Measure(NoCoverageMetrics.NOT_COVERED_COMPLEXITY, notCoveredComplexity));
+
+		assertEquals((complexityDelta - notCoveredComplexity)
+				* TechnicalDebtPlugin.COST_METHOD_COMPLEXITY_DEFVAL
+				/ DuplicationDebtCalculator.HOURS_PER_DAY,
+				calculator.calculatePossibleDebt(context), 0.0001);
+	}
+	
 	@Test(expected = NoCalculation.class)
 	public void testTotalPossibleComplexityNotPossible() throws Exception {
 		double complexityDelta = -1;

@@ -36,9 +36,11 @@ import org.sonar.api.resources.Project;
 import org.sonar.api.resources.Resource;
 import org.sonar.plugins.technicaldebt.axis.AxisDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.ComplexityDebtCalculator;
+import org.sonar.plugins.technicaldebt.axis.ComplexityToCoverFetcher;
 import org.sonar.plugins.technicaldebt.axis.CoverageDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.DuplicationDebtCalculator;
 import org.sonar.plugins.technicaldebt.axis.NoCalculation;
+import org.sonar.plugins.technicaldebt.axis.ValueFetcher;
 
 import com.google.common.collect.Lists;
 
@@ -55,9 +57,10 @@ public final class TechnicalDebtDecorator implements Decorator {
 	 */
 	public TechnicalDebtDecorator(Settings settings, Project project) {
 		this.settings = settings;
-		axisList = Arrays.asList(new ComplexityDebtCalculator(settings),
-				new CoverageDebtCalculator(settings),
-				new DuplicationDebtCalculator(settings));
+		ValueFetcher complexityToCoverFetcher = new ComplexityToCoverFetcher();
+		axisList = Arrays.asList(new ComplexityDebtCalculator(settings), new CoverageDebtCalculator(settings,
+				complexityToCoverFetcher), new DuplicationDebtCalculator(
+				settings));
 	}
 
 	/**

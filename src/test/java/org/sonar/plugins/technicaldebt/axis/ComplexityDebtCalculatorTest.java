@@ -55,7 +55,7 @@ public class ComplexityDebtCalculatorTest {
 	}
 
 	@Test
-	public void testTotalPossibleComplexity() throws Exception {
+	public void testPossibleComplexity() throws Exception {
 		double complexityDelta = 12;
 		double complexity = CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY
 				+ complexityDelta;
@@ -68,27 +68,8 @@ public class ComplexityDebtCalculatorTest {
 				calculator.calculatePossibleDebt(context), 0.0001);
 	}
 
-	@Test
-	public void testTotalPossibleComplexityWithSomeNotCovered() throws Exception {
-		double complexityDelta = 12;
-		double complexity = CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY
-				+ complexityDelta;
-		double notCoveredComplexity = 2;
-		
-		when(context.getMeasure(CoreMetrics.COMPLEXITY)).thenReturn(
-				new Measure(CoreMetrics.COMPLEXITY, complexity));
-		
-		when(context.getMeasure(NoCoverageMetrics.NOT_COVERED_COMPLEXITY)).thenReturn(
-				new Measure(NoCoverageMetrics.NOT_COVERED_COMPLEXITY, notCoveredComplexity));
-
-		assertEquals((complexityDelta - notCoveredComplexity)
-				* TechnicalDebtPlugin.COST_METHOD_COMPLEXITY_DEFVAL
-				/ DuplicationDebtCalculator.HOURS_PER_DAY,
-				calculator.calculatePossibleDebt(context), 0.0001);
-	}
-	
 	@Test(expected = NoCalculation.class)
-	public void testTotalPossibleComplexityNotPossible() throws Exception {
+	public void testPossibleComplexityNotPossible() throws Exception {
 		double complexityDelta = -1;
 		double complexity = CxxCppNcssSensor.DEFAULT_MAX_COMPLEXITY
 				+ complexityDelta;
@@ -97,12 +78,14 @@ public class ComplexityDebtCalculatorTest {
 
 		calculator.calculatePossibleDebt(context);
 	}
-	
+
 	@Test
-	public void testAbsoluteComplexity() throws Exception {
+	public void testActualComplexity() throws Exception {
 		double complexity = 12;
-		when(context.getMeasure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH)).thenReturn(
-				new Measure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH, complexity));
+		when(context.getMeasure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH))
+				.thenReturn(
+						new Measure(DistanceMetrics.DISTANCE_COMPLEXITY_LENGTH,
+								complexity));
 
 		assertEquals(complexity
 				* TechnicalDebtPlugin.COST_METHOD_COMPLEXITY_DEFVAL

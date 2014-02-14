@@ -26,6 +26,7 @@ import org.sonar.api.measures.CoreMetrics;
 import org.sonar.api.measures.Measure;
 import org.sonar.api.measures.MeasureUtils;
 import org.sonar.api.measures.Metric;
+import org.sonar.plugins.cxx.coverage.NoCoverageMetrics;
 import org.sonar.plugins.technicaldebt.TechnicalDebtPlugin;
 
 import java.util.Arrays;
@@ -37,30 +38,37 @@ import java.util.List;
 public final class CoverageDebtCalculator extends AxisDebtCalculator {
 
 	public static final double COVERAGE_TARGET = 0.8;
+	private ValueFetcher complexityFetcher;
 
 	/**
 	 * {@inheritDoc}
 	 */
-	public CoverageDebtCalculator(Settings settings) {
+	public CoverageDebtCalculator(Settings settings, ValueFetcher fetcher) {
 		super(settings);
+
+		this.complexityFetcher = fetcher;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	public double calculateActualDebt(DecoratorContext context) {
-		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 		Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
 
-		if (!MeasureUtils.hasValue(complexity)
-				|| !MeasureUtils.hasValue(coverage)) {
+		if (!MeasureUtils.hasValue(coverage)) {
+			return 0.0;
+		}
+
+		double complexity;
+		try {
+			complexity = complexityFetcher.getValue(context);
+		} catch (NoCalculation e) {
 			return 0.0;
 		}
 
 		// It is not reasonable to have an objective at 100%, so target is 80%
 		// for coverage
-		double gap = (COVERAGE_TARGET - coverage.getValue() / 100)
-				* complexity.getValue();
+		double gap = (COVERAGE_TARGET - coverage.getValue() / 100) * complexity;
 
 		return (gap > 0.0 ? gap : 0.0)
 				* settings
@@ -76,15 +84,15 @@ public final class CoverageDebtCalculator extends AxisDebtCalculator {
 	public double calculatePossibleDebt(DecoratorContext context)
 			throws NoCalculation {
 		Measure coverage = context.getMeasure(CoreMetrics.COVERAGE);
-		Measure complexity = context.getMeasure(CoreMetrics.COMPLEXITY);
 
-		if (!MeasureUtils.hasValue(coverage)
-				|| !MeasureUtils.hasValue(complexity)) {
+		if (!MeasureUtils.hasValue(coverage)) {
 			throw new NoCalculation();
 		}
 
+		double complexity = complexityFetcher.getValue(context);
+
 		return COVERAGE_TARGET
-				* complexity.getValue()
+				* complexity
 				* settings
 						.getDouble(TechnicalDebtPlugin.COST_UNCOVERED_COMPLEXITY)
 				/ HOURS_PER_DAY;

@@ -65,7 +65,7 @@ public final class TechnicalDebtPlugin extends SonarPlugin {
   public static final double COST_DUPLICATED_BLOCKS_DEFVAL = 2.0;
 
   public static final String COST_UNCOVERED_COMPLEXITY = "technicaldebt.uncovered.complexity";
-  public static final double COST_UNCOVERED_COMPLEXITY_DEFVAL = 0.2;
+  public static final double COST_UNCOVERED_COMPLEXITY_DEFVAL = 1.5;
 
 
   /**
